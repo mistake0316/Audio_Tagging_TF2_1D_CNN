@@ -1,0 +1,1 @@
+{"lr": "0.0001", "use_remark": "False", "multilabel_problem": "True", "total_folds": "12", "epoches": "1000", "mixup": "True", "batch_size_low": "32", "batch_size_top": "32"}

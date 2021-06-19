@@ -1,3 +1,5 @@
+import argparse
+
 import librosa
 import librosa.display
 
@@ -191,11 +193,12 @@ def write_ds_to_tfrecord(
   folder=None,
   filename="train.filepath.x.mel.label.remark.tfrecord",
   metafilename="meta.json",
+  force=False,
 ):
   folder = folder or datetime.date.today().strftime("tfrecord_%Y_%m_%d")
   folder = Path(folder)
   
-  folder.mkdir(parents=True, exist_ok=False)
+  folder.mkdir(parents=True, exist_ok=force)
   
   filepath = folder/filename
   filepath = str(filepath)
@@ -272,21 +275,23 @@ def load_TFRecord(
   
   return train_ds_from_tfrecord, meta
 
-def mix_mels(mels):
-  # 10*np.log10((10**(melspec_x/10)+10**(melspec_x2/10)))
-  
-  inverse_fun = lambda mel:10**(mel/10)
-  convert_fun = lambda S_db:10*np.log10(S_db)
-  
-  ret = convert_fun(sum(map(inverse_fun, mels)))
-  return ret
-
 def main():
-  print("loading dataset")
-  train_ds = load_dataset_from_folder()
-  print("write dataset to tfrecord")
-  write_ds_to_tfrecord(train_ds)
-
+  parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument('--tfrecord_path', type=str, required=False, help='Directory of tfrecord.', default=None)
+  parser.add_argument('--override', type=bool, required=False, help='Flag of override or not', default=False)
+  parser.add_argument('--only_show_example', required=False, help='Flag of only show example or not', default=False)
+  args = parser.parse_args()
+  
+  if not args.only_show_example:
+    print("loading dataset")
+    train_ds = load_dataset_from_folder()
+    print("write dataset to tfrecord")
+    write_ds_to_tfrecord(
+      train_ds,
+      folder=args.tfrecord_path,
+      force=args.override,
+    )
+  
   print("load an example")
   tfrecord_ds, meta = load_TFRecord()
   print(tfrecord_ds)

@@ -1,0 +1,1 @@
+{"depth": "5", "filters": "256", "global_kernel_size": "4", "use_dilate": "True", "drop_rate": "0.3", "concat_mode": "None", "gaussian_drop_rate": "0.05", "activation": "<function relu at 0x7fe79b795d40>", "final_group_mode": "['mean', 'max']"}

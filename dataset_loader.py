@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 from functools import partial
 from functools import lru_cache
-import audio_transform
 import inspect
 
 from tqdm.auto import tqdm
@@ -13,8 +12,10 @@ from tqdm.auto import tqdm
 print(f"tf.__version__:{tf.__version__}")
 
 @lru_cache(1)
-def load_shuffled_ds_and_meta(seed=228922):
+def load_shuffled_ds_and_meta(seed=228922, cache=False):
   ds,meta = data_utils.load_TFRecord()
+  if cache:
+    ds = ds.cache()
   
   shuffled_ds = ds.shuffle(
     buffer_size = meta["total_files"],
@@ -53,11 +54,9 @@ def use_items(*args, use):
   ith_table = {
     "filepath":0,
     "x":1,
-    "x_pitch_shift":2,
-    "mel":3,
-    "pitch_shifted_mel":4,
-    "label":5,
-    "remark":6,
+    "mel":2,
+    "label":3,
+    "remark":4,
   }
   ret = []
   for name in use:
@@ -68,31 +67,16 @@ def use_items(*args, use):
       ret[-1] = tf.transpose(ret[-1],perm=perm)
   return ret
 
-def random_pick_one(*args, shift_cap=None, mid_prob=0.9):
-  assert args[0].shape[0]%2==1
-  mid = args[0].shape[0]//2
-  if shift_cap == None:
-    shift_cap = mid
-  else:
-    assert shift_cap <= mid
-  
-  if tf.random.uniform([1]) > mid_prob:
-    idx = tf.argmax(tf.random.uniform([2*shift_cap+1]))+(mid-shift_cap)
-  else:
-    idx = tf.constant(mid,dtype=tf.int64)
-  return [args[0][idx], *args[1:]]
-
 def process_train_valid_test_data_dict(
   data,
-  use_shifted_mel=True,
-  use_remark=True,
-  **shift_kwargs):
+  use_remark=False,
+  ):
   
   if use_remark:
     target_name = "remark"
   else:
     target_name = "label"
-    
+  
   use_Mel_Label = partial(use_items, use=["mel", target_name])
 
   train_ds = data["train"]
@@ -103,19 +87,11 @@ def process_train_valid_test_data_dict(
     .shuffle(99999, reshuffle_each_iteration=True)
   )
   
-  if use_shifted_mel:
-    use_PitchShifted_Mel_Label = partial(use_items, use=["pitch_shifted_mel", target_name])
-    random_pick_shift = partial(random_pick_one, shift_cap=shift_kwargs.get("n", 5))
-    train_ds = (
-      train_ds
-      .map(use_PitchShifted_Mel_Label)
-      .map(random_pick_shift)
-    )
-  else:
-    train_ds = train_ds.map(use_Mel_Label)
+  train_ds = train_ds.map(use_Mel_Label)
   
   def expand(*sample):
     return [tf.expand_dims(x,0) for x in sample]
+  
   valid_ds = (
     valid_ds
     .map(use_Mel_Label)
@@ -134,6 +110,7 @@ def process_train_valid_test_data_dict(
 
 
 def dynamic_batch_size(ds, batch_size_top=32, batch_size_low=1):
+  assert batch_size_top > batch_size_low, f"top must greater than low, got ({batch_size_top}, {batch_size_low})"
   out_raw = []
   batch_size = 0
   def process_raw():
@@ -150,7 +127,6 @@ def dynamic_batch_size(ds, batch_size_top=32, batch_size_low=1):
   if out_raw:
     yield process_raw()
     
-
 def create_dynamic_batchsize_ds(ds, batch_size_top, batch_size_low):
   assert batch_size_top >= batch_size_low
   if batch_size_top > batch_size_low:
@@ -168,9 +144,7 @@ def load_default_config():
     "seed":228922,
     "total_folds":12,
     "cache":True,
-    "use_shifted_mel":True,
     "use_remark":False,
-    "shift_mel_kwargs":{"n":5},
     "batch_size_top":32,
     "batch_size_low":1,
   }
@@ -186,10 +160,12 @@ def lazy_ds_loader(**config):
   if config:
     base_config.update(config)
   config = base_config
-    
-  shuffled_ds, meta = load_shuffled_ds_and_meta(config.get("seed"))
-  if config.get("cache"):
-    shuffled_ds = shuffled_ds.cache()
+
+  shuffled_ds, meta = load_shuffled_ds_and_meta(
+    seed=config.get("seed"),
+    cache=config.get("cache"),
+  )
+  
   ds_multiple_folds = [
     train_valid_test_split(
       shuffled_ds,
@@ -204,7 +180,6 @@ def lazy_ds_loader(**config):
     process_train_valid_test_data_dict(
       data = data,
       use_remark=config.get("use_remark", False),
-      **config.get("shift_mel_kwargs")
     )
     for data in ds_multiple_folds
   ]
