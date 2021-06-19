@@ -1,3 +1,11 @@
+# User Customize
+train
+public_test
+private_test
+tfrecord_*
+*.zip
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
