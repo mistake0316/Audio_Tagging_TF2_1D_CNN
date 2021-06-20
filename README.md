@@ -1,6 +1,11 @@
 # Audio_Tagging_TF_1D_CNN
 This is an 1D_CNN implement from Metformin-121 for competition "Tomofun 狗音辨識 AI 百萬挑戰賽" in T-BRain
 
+## TODO
+- [ ] Fix MULTI_CLASS_VERSION
+- [ ] Make aisialzation runnable (Folder "CAN_NOT_RUN_NOW")
+- [ ] Add more description to argparse
+
 ## Dataset
 Donwload dataset from Tbrain "Tomofun 狗音辨識 AI 百萬挑戰賽"
 
