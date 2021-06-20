@@ -1,1 +1,1 @@
-python3 Training_with_outer_loader.py --model_folder="MULTI_LABEL_VERSION"
+python3 Training_with_outer_loader.py --model_folder="MULTI_LABEL_VERSION_RETRAIN"

@@ -1,7 +1,7 @@
 # User Customize
-train
-public_test
-private_test
+train*
+public_test*
+private_test*
 tfrecord_*
 *.zip
 *.csv
