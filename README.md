@@ -3,7 +3,7 @@ This is an 1D_CNN implement from Metformin-121 for competition "Tomofun 狗音�
 
 ## TODO
 - [ ] Fix MULTI_CLASS_VERSION
-- [ ] Make aisialzation runnable (Folder "CAN_NOT_RUN_NOW")
+- [ ] Make visialzation runnable (Folder "CAN_NOT_RUN_NOW")
 - [ ] Add more description to argparse
 
 ## Dataset
